@@ -1868,6 +1868,17 @@ void Context::popLayerId()
 
 Context::Context()
 {
+	
+}
+
+Context::~Context()
+{
+	
+}
+
+
+void Context::init()
+{
 	m_sortCalled = false;
 	m_endFrameCalled = false;
 	m_primMode = PrimitiveMode_None;
@@ -1890,7 +1901,7 @@ Context::Context()
 	memset(&m_keyDownCurr, 0, sizeof(m_keyDownCurr));
 	memset(&m_keyDownPrev, 0, sizeof(m_keyDownPrev));
 
- // init cull frustum to INF effectively disables culling
+	// init cull frustum to INF effectively disables culling
 	for (int i = 0; i < FrustumPlane_Count; ++i)
 	{
 		m_appData.m_cullFrustum[i] = Vec4(INFINITY);
@@ -1905,7 +1916,8 @@ Context::Context()
 	pushId(0x811C9DC5u); // fnv1 hash base
 }
 
-Context::~Context()
+
+void Context::shutdown()
 {
 	for (int i = 0; i < 2; ++i)
 	{

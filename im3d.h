@@ -605,6 +605,9 @@ struct IM3D_API Context
 	                    Context();
 	                    ~Context();
 
+	void				init();
+	void				shutdown();
+
 	void                begin(PrimitiveMode _mode);
 	void                end();
 
