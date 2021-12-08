@@ -1412,8 +1412,7 @@ template struct Im3d::Vector<DrawList>;
 
 *******************************************************************************/
 
-static Context g_DefaultContext;
-IM3D_THREAD_LOCAL Context* Im3d::internal::g_CurrentContext = &g_DefaultContext;
+IM3D_THREAD_LOCAL Context* Im3d::internal::g_CurrentContext = nullptr;
 
 void Context::begin(PrimitiveMode _mode)
 {
@@ -1868,17 +1867,6 @@ void Context::popLayerId()
 
 Context::Context()
 {
-	
-}
-
-Context::~Context()
-{
-	
-}
-
-
-void Context::init()
-{
 	m_sortCalled = false;
 	m_endFrameCalled = false;
 	m_primMode = PrimitiveMode_None;
@@ -1916,8 +1904,7 @@ void Context::init()
 	pushId(0x811C9DC5u); // fnv1 hash base
 }
 
-
-void Context::shutdown()
+Context::~Context()
 {
 	for (int i = 0; i < 2; ++i)
 	{
