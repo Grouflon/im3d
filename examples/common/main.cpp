@@ -2,6 +2,9 @@
 
 int main(int, char**)
 {
+	Im3d::Context ctx;
+	Im3d::SetContext(ctx);
+
 	Im3d::Example example;
 	if (!example.init(-1, -1, "Im3d Example"))
 	{
