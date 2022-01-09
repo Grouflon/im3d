@@ -1925,14 +1925,6 @@ Context::~Context()
 }
 
 namespace {
-	struct SortData
-	{
-		float       m_key;
-		VertexData* m_start;
-		SortData() {}
-		SortData(float _key, VertexData* _start): m_key(_key), m_start(_start) {}
-	};
-
 	int SortCmp(const void* _a, const void* _b)
 	{
 		float ka = ((SortData*)_a)->m_key;
@@ -1968,8 +1960,6 @@ namespace {
 
 void Context::sort()
 {
-	static IM3D_THREAD_LOCAL Vector<SortData> sortData[DrawPrimitive_Count]; // reduces # allocs
-
 	for (U32 layer = 0; layer < m_layerIdMap.size(); ++layer)
 	{
 		Vec3 viewOrigin = m_appData.m_viewOrigin;
@@ -1978,24 +1968,24 @@ void Context::sort()
 		for (int i = 0 ; i < DrawPrimitive_Count; ++i)
 		{
 			Vector<VertexData>& vertexData = *(m_vertexData[1][layer * DrawPrimitive_Count + i]);
-			sortData[i].clear();
+			m_sortData[i].clear();
 			if (!vertexData.empty())
 			{
-				sortData[i].reserve(vertexData.size() / VertsPerDrawPrimitive[i]);
+				m_sortData[i].reserve(vertexData.size() / VertsPerDrawPrimitive[i]);
 				for (VertexData* v = vertexData.begin(); v != vertexData.end(); )
 				{
-					sortData[i].push_back(SortData(0.0f, v));
+					m_sortData[i].push_back(SortData(0.0f, v));
 					IM3D_ASSERT(v < vertexData.end());
 					for (int j = 0; j < VertsPerDrawPrimitive[i]; ++j, ++v)
 					{
 					 // sort key is the primitive midpoint distance to view origin
-						sortData[i].back().m_key += Length2(Vec3(v->m_positionSize) - viewOrigin);
+						m_sortData[i].back().m_key += Length2(Vec3(v->m_positionSize) - viewOrigin);
 					}
-					sortData[i].back().m_key /= (float)VertsPerDrawPrimitive[i];
+					m_sortData[i].back().m_key /= (float)VertsPerDrawPrimitive[i];
 				}
 			 // qsort is not necessarily stable but it doesn't matter assuming the prims are pushed in roughly the same order each frame
-				qsort(sortData[i].data(), sortData[i].size(), sizeof(SortData), SortCmp);
-				Reorder(vertexData, sortData[i].data(), sortData[i].size(), VertsPerDrawPrimitive[i]);
+				qsort(m_sortData[i].data(), m_sortData[i].size(), sizeof(SortData), SortCmp);
+				Reorder(vertexData, m_sortData[i].data(), m_sortData[i].size(), VertsPerDrawPrimitive[i]);
 			}
 		}
 
@@ -2005,14 +1995,14 @@ void Context::sort()
 		int emptyCount = 0;
 		for (int i = 0; i < DrawPrimitive_Count; ++i)
 		{
-			if (sortData[i].empty())
+			if (m_sortData[i].empty())
 			{
 				search[i] = 0;
 				++emptyCount;
 			}
 			else
 			{
-				search[i] = sortData[i].begin();
+				search[i] = m_sortData[i].begin();
 			}
 		}
 		bool first = true;
@@ -2047,7 +2037,7 @@ void Context::sort()
 				DrawList dl;
 				dl.m_layerId     = m_layerIdMap[layer];
 				dl.m_primType    = (DrawPrimitiveType)cprim;
-				dl.m_vertexData  = m_vertexData[1][layer * DrawPrimitive_Count + cprim]->data() + (search[cprim] - sortData[cprim].data()) * VertsPerDrawPrimitive[cprim];
+				dl.m_vertexData  = m_vertexData[1][layer * DrawPrimitive_Count + cprim]->data() + (search[cprim] - m_sortData[cprim].data()) * VertsPerDrawPrimitive[cprim];
 				dl.m_vertexCount = 0;
 				m_drawLists.push_back(dl);
 				first = false;
@@ -2056,7 +2046,7 @@ void Context::sort()
 		 // increment the vertex count for the current draw list
 			m_drawLists.back().m_vertexCount += VertsPerDrawPrimitive[cprim];
 			++search[cprim];
-			if (search[cprim] == sortData[cprim].end())
+			if (search[cprim] == m_sortData[cprim].end())
 			{
 				search[cprim] = 0;
 				++emptyCount;

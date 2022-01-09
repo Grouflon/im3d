@@ -451,6 +451,14 @@ struct DrawList
 };
 typedef void (DrawPrimitivesCallback)(const DrawList& _drawList);
 
+struct SortData
+{
+	float       m_key;
+	VertexData* m_start;
+	SortData() {}
+	SortData(float _key, VertexData* _start): m_key(_key), m_start(_start) {}
+};
+
 enum TextFlags
 {
 	TextFlags_AlignLeft    = (1 << 0),
@@ -768,6 +776,9 @@ private:
 	bool                m_keyDownPrev[Key_Count];           // Key state from previous frame.
 	Vec4                m_cullFrustum[FrustumPlane_Count];  // Optimized frustum planes from m_appData.m_cullFrustum.
 	int                 m_cullFrustumCount;                 // # valid frustum planes in m_cullFrustum.
+
+// Sort data.
+	Vector<SortData>    m_sortData[DrawPrimitive_Count];    // reduces # allocs
 
 	// Sort primitive data.
 	void                sort();
